@@ -3,6 +3,8 @@ import Filter from './Components/Filter'
 import PersonForm from './Components/PersonForm'
 import Persons from './Components/Persons'
 import axios from 'axios'
+import personService from './services/PersonService'
+import Alert from './Components/Alert.js'
 
 
 const App = () => {
@@ -10,32 +12,59 @@ const App = () => {
   const [newName, setNewName] = useState('')
   const [newNumber, setNewNumber] = useState('')
   const [newFilter, setNewFilter] = useState('')
+  const [alert, setAlert] = useState(null)
+  const [error, setErrorAlert] = useState(null)
 
-  const hook = () => {
+  const timer = 3000
+
+  useEffect(() => {
     console.log('effect')
-    axios
-      .get('http://localhost:3001/persons')
-      .then(response => {
-        console.log('promise fulfilled')
-        setPersons(response.data)
-      })
-  }
-
-  useEffect(hook, [])
+    personService
+      .getAll
+      .then(response => 
+        setPersons(response))    
+  }, [])
 
   const addPerson = (event) => {
     event.preventDefault()
 
-    const names = persons.map((person) => person.name)
-    if(names.includes(newName)) {
-      window.alert(`${newName} is already added to phonebook`)
-      setNewName('')
-      setNewNumber('')
-    } else {
-      setPersons(persons.concat({name: newName, number: newNumber}))
-      setNewName('')
-      setNewNumber('')
-    }
+    personService.query(newName).then(person => {
+      const newObject = {
+        'name': newName,
+        'number' : newNumber
+      }
+    
+      if(person) {
+        const alert = `${newName} is already added to phonebook, replace the old number with a new one?`
+        if(window.confirm(alert)) {
+          personService
+            .update(person.id, newObject)
+              .then(() => {
+                personService
+                  .getAll()
+                    .then(result => setPersons(result))
+        setAlert(`Added ${newName}`)
+        setTimeout(() => setErrorAlert(null), timer)
+          }).catch(error => {
+            setErrorAlert(error.response.data.error)
+            setTimeout(() => setErrorAlert(null), timer)            
+          })
+        }
+      } else {
+        personService.create(newObject).then(() => {
+          personService
+            .getAll()
+              .then(response => setPersons(response))
+          setNewName('')
+          setNewNumber('')
+          setAlert(`Added ${newName}`)
+          setTimeout(() => setAlert(null), timer)
+        }).catch(error => {
+          setErrorAlert(error.response.data.error)
+          setTimeout(() => setErrorAlert(null), true)
+        })
+      }
+    })
   }
 
   const handleNameChange = (event) => {
@@ -55,16 +84,6 @@ const App = () => {
   return (
     <div>
       <h2>Phonebook</h2>
-      <Filter 
-        filterChange={handleFilterChange}
-        />
-      <h3>Add a new</h3>
-      <PersonForm addPerson={addPerson} 
-      newName={newName} nameChange={handleNameChange}
-      newNumber={newNumber} numberChange={handleNumberChange}
-      />
-      <h3>Numbers</h3>
-      <Persons persons={persons.filter(person => person.name.toLowerCase().includes(newFilter.toLowerCase()))}/>
     </div>
   )
 }

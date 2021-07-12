@@ -1,17 +1,16 @@
 import React from 'react'
 
-const Filter = (props) => {
-    const {filterChange} = props
+const Filter = ({newFilter, setNewFilter, handleFilterChange}) => {
     return (
-        <form>
-            <div>
-                filter shown with
-                <input
-                    onChange={filterChange}
-                />
-            </div>
-        </form>
+        <div>
+            filter shown with
+            <input
+                value={newFilter}
+                onChange={handleFilterChange(setNewFilter)}
+            />
+        </div>
     )
 }
 
 export default Filter
+
