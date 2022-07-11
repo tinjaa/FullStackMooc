@@ -35,5 +35,8 @@
   },
   "devDependencies": {
     "json-server": "^0.16.3"
+  },
+  "resolutions": {
+    "mini-css-extract-plugin": "2.4.5" 
   }
 }
