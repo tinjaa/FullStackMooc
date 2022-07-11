@@ -106,6 +106,7 @@ const App = () => {
   }
 
   const handleFilterChange = (event) => {
+    event.preventDefault()
     setNewFilter(event.target.value)
   }
 

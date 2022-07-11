@@ -7,7 +7,7 @@ const Persons = ({persons, newFilter, handleDelete}) => {
     return (
         <div>
             {persons.map((person) => {
-                    if(newFilter.length === 0 || person.name.search(newFilter) !== -1) {
+                    if(newFilter.length === 0 || person.name.trim().toLowerCase().search(newFilter.trim().toLowerCase()) !== -1) {
                         return (
                              <Person key={person.id} person={person} handleDelete={() => handleDelete(person.name,person.id)}/>
                          )
