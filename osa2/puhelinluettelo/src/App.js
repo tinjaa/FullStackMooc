@@ -2,9 +2,8 @@ import React, { useEffect, useState } from 'react'
 import Filter from './Components/Filter'
 import PersonForm from './Components/PersonForm'
 import Persons from './Components/Persons'
-import axios from 'axios'
 import personService from './services/PersonService'
-import Alert from './Components/Alert.js'
+import Notification from './Components/Notification.js'
 
 
 const App = () => {
@@ -12,68 +11,97 @@ const App = () => {
   const [newName, setNewName] = useState('')
   const [newNumber, setNewNumber] = useState('')
   const [newFilter, setNewFilter] = useState('')
-  const [alert, setAlert] = useState(null)
-  const [error, setErrorAlert] = useState(null)
+  const [message, setMessage] = useState(null)
+  const [error, setError] = useState(false)
 
   const timer = 3000
 
   useEffect(() => {
-    console.log('effect')
     personService
-      .getAll
-      .then(response => 
-        setPersons(response))    
+      .getAll()
+      .then(response =>
+        setPersons(response))
   }, [])
 
   const addPerson = (event) => {
     event.preventDefault()
 
-    personService.query(newName).then(person => {
-      const newObject = {
-        'name': newName,
-        'number' : newNumber
-      }
-    
-      if(person) {
-        const alert = `${newName} is already added to phonebook, replace the old number with a new one?`
-        if(window.confirm(alert)) {
-          personService
-            .update(person.id, newObject)
-              .then(() => {
-                personService
-                  .getAll()
-                    .then(result => setPersons(result))
-        setAlert(`Added ${newName}`)
-        setTimeout(() => setErrorAlert(null), timer)
+    const newPerson = {
+      name: newName,
+      number: newNumber
+    }
+
+    const names = persons.map(persons => persons.name.trim().toLowerCase())
+
+    if(names.includes(newName.trim().toLowerCase())) {
+      const alert = `${newName} is already added to phonebook, replace the old number with a new one?`
+      if (window.confirm(alert)) {
+
+        const existingPerson = persons.find(person =>person.name.trim().toLowerCase() === newName.trim().toLowerCase())
+        console.log(existingPerson.id)
+
+        personService
+          .update(existingPerson.id, newPerson)
+          .then(() => {
+            personService
+              .getAll()
+              .then(result => setPersons(result))
+            showNotification(`Updated ${newName}`,false)
+            setTimeout(() => setMessage(null), timer)
           }).catch(error => {
-            setErrorAlert(error.response.data.error)
-            setTimeout(() => setErrorAlert(null), timer)            
+            showNotification(`Information of ${newName} has already been removed from server`,true)
+            setTimeout(() => setMessage(null), timer)
+            personService.getAll().then(response => setPersons(response))
           })
-        }
-      } else {
-        personService.create(newObject).then(() => {
-          personService
-            .getAll()
-              .then(response => setPersons(response))
-          setNewName('')
-          setNewNumber('')
-          setAlert(`Added ${newName}`)
-          setTimeout(() => setAlert(null), timer)
-        }).catch(error => {
-          setErrorAlert(error.response.data.error)
-          setTimeout(() => setErrorAlert(null), true)
-        })
       }
-    })
+    } else {
+      personService.create(newPerson).then(() => {
+        personService
+          .getAll()
+          .then(response => setPersons(response))
+        setNewName('')
+        setNewNumber('')
+        showNotification(`Added ${newName}`,false)
+      }).catch(error => {
+        showNotification(error.response.data.error,true)
+      })
+    }
+  }
+  
+
+  const handleDelete = (name, id) => {
+    const alert = `Are you sure you want to delete ${name}`
+    console.log(alert)
+
+    if (window.confirm(alert)) {
+      personService.delete(id)
+        .then(() => {
+          personService.getAll().then(response => setPersons(response))
+          showNotification(`${name} successfully deleted`,false)
+        })
+        .catch(error => {
+          showNotification(`${name} was already deleted from the server`,true)
+          personService.getAll().then(response => setPersons(response))
+        })
+    }
+  }
+
+  const showNotification = (message, isError) => {
+    setError(isError)
+    setMessage(message)
+    setTimeout(() => {
+      setMessage(null)
+      setError(false)
+    }, 5000)
   }
 
   const handleNameChange = (event) => {
-    console.log(event.target.value)
+    event.preventDefault()
     setNewName(event.target.value)
   }
 
   const handleNumberChange = (event) => {
-    console.log(event.target.value)
+    event.preventDefault()
     setNewNumber(event.target.value)
   }
 
@@ -84,6 +112,29 @@ const App = () => {
   return (
     <div>
       <h2>Phonebook</h2>
+
+      <Notification 
+        message={message}
+        error={error} />
+
+      <Filter 
+        newFilter={newFilter} 
+        handleFilterChange={handleFilterChange} />
+
+      <PersonForm
+        addPerson={addPerson}
+        newName={newName}
+        handleNameChange={handleNameChange}
+        newNumber={newNumber}
+        handleNumberChange={handleNumberChange} />
+
+      <h3>Numbers</h3>
+
+      <Persons 
+        persons={persons} 
+        newFilter={newFilter} 
+        handleDelete={handleDelete} />
+
     </div>
   )
 }

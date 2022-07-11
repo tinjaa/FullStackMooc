@@ -1,25 +1,10 @@
 import React from 'react'
-import personService from '../services/PersonService'
 
-const Person = props => {
-    const {person, setPersons} = props
-
-    const handleDelete = () => {
-        const alert = -`Delete ${person.name}`
-
-        if(window.confirm(alert)) {
-            personService.delete(person.id)
-            personService.getAll().then(response => setPersons(response))
-        }
-    }
-
-    return (
-        <tr>
-            <td>{person.name}</td>
-            <td>{person.number}</td>
-            <td><button onClick={handleDelete}>Delete</button></td>
-        </tr>
-    )
-}
+const Person = ({person, handleDelete}) => (
+        <div>
+            <span>{person.name} {person.number}</span>
+            <button onClick={() => handleDelete(person.name,person.id)}>Delete</button>
+        </div>
+)
 
 export default Person
